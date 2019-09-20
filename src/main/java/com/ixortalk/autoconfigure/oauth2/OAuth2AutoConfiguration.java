@@ -68,7 +68,6 @@ public class OAuth2AutoConfiguration {
     }
 
     @Configuration
-    @EnableConfigurationProperties(IxorTalkAuth0ConfigProperties.class)
     @Conditional(NoAuth0Condition.class)
     @Import(ResourceServerConfiguration.class)
     protected static class PlainOAuth2Configuration {
