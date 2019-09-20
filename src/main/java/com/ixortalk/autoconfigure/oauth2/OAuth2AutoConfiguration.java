@@ -38,6 +38,8 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfiguration;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -85,7 +87,7 @@ public class OAuth2AutoConfiguration {
     }
 
     @Configuration
-    protected static class IxorTalkWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+    protected static class IxorTalkWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
 
         @Inject
         private ManagementServerProperties managementServerProperties;
@@ -101,7 +103,12 @@ public class OAuth2AutoConfiguration {
         }
 
         @Override
-        protected void configure(HttpSecurity http) throws Exception {
+        public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+
+        }
+
+        @Override
+        public void configure(HttpSecurity http) throws Exception {
             for (IxorTalkHttpSecurityConfigurer ixorTalkHttpSecurityConfigurer : ixorTalkHttpSecurityConfigurers) {
                 ixorTalkHttpSecurityConfigurer.configure(http);
             }
