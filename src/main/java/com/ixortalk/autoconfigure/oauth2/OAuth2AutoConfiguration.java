@@ -25,9 +25,11 @@ package com.ixortalk.autoconfigure.oauth2;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerTokenServicesConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -48,6 +50,7 @@ import static java.lang.String.format;
 import static org.springframework.util.StringUtils.isEmpty;
 
 @Configuration
+@AutoConfigureAfter(ResourceServerTokenServicesConfiguration.class)
 @EnableWebSecurity
 public class OAuth2AutoConfiguration {
 
@@ -69,7 +72,7 @@ public class OAuth2AutoConfiguration {
 
     @Configuration
     @Conditional(NoAuth0Condition.class)
-    @Import(ResourceServerConfiguration.class)
+    @Import({ResourceServerConfiguration.class, ResourceServerTokenServicesConfiguration.class})
     protected static class PlainOAuth2Configuration {
 
     }
