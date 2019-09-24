@@ -24,8 +24,11 @@
 package com.ixortalk.autoconfigure.oauth2;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import com.auth0.spring.security.api.authentication.AuthenticationJsonWebToken;
+import com.ixortalk.autoconfigure.oauth2.util.BearerTokenExtractor;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
@@ -39,9 +42,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.token.AccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfiguration;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -68,6 +79,34 @@ public class OAuth2AutoConfiguration {
                     .forRS256(ixorTalkAuth0ConfigProperties.getAudience(), format("https://%s/", ixorTalkAuth0ConfigProperties.getDomain()))
                     .configure(http);
         }
+
+        @Bean
+        public BearerTokenExtractor auth0BearerTokenExtractor() {
+            return () -> {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication instanceof AuthenticationJsonWebToken) {
+                    AuthenticationJsonWebToken authenticationJsonWebToken = (AuthenticationJsonWebToken) authentication;
+                    return authenticationJsonWebToken.getToken();
+                }
+
+                throw new IllegalStateException("No bearer token present in security context");
+            };
+        }
+
+        @Bean
+        @ConditionalOnBean(ClientCredentialsResourceDetails.class)
+        public OAuth2RestTemplate auth0ClientCredentialsOAuth2RestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails) {
+            OAuth2RestTemplate auth0OAuth2RestTemplate = new OAuth2RestTemplate(clientCredentialsResourceDetails);
+            auth0OAuth2RestTemplate.setAccessTokenProvider(clientCredentialsWithAudienceAccessTokenProvider());
+            return auth0OAuth2RestTemplate;
+        }
+
+        @Bean
+        public AccessTokenProvider clientCredentialsWithAudienceAccessTokenProvider() {
+            ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
+            clientCredentialsAccessTokenProvider.setTokenRequestEnhancer((request, resource, form, headers) -> form.set("audience", ixorTalkAuth0ConfigProperties.getAudience()));
+            return clientCredentialsAccessTokenProvider;
+        }
     }
 
     @Configuration
@@ -75,6 +114,28 @@ public class OAuth2AutoConfiguration {
     @Import({ResourceServerConfiguration.class, ResourceServerTokenServicesConfiguration.class})
     protected static class PlainOAuth2Configuration {
 
+        @Bean
+        public BearerTokenExtractor plainOAuth2BearerTokenExtractor() {
+            return () -> {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication instanceof OAuth2Authentication) {
+                    OAuth2Authentication oAuth2Authentication = (OAuth2Authentication) authentication;
+                    Object details = oAuth2Authentication.getDetails();
+                    if (details instanceof OAuth2AuthenticationDetails) {
+                        OAuth2AuthenticationDetails oAuth2AuthenticationDetails = (OAuth2AuthenticationDetails) details;
+                        return oAuth2AuthenticationDetails.getTokenValue();
+                    }
+                }
+
+                throw new IllegalStateException("No bearer token present in security context");
+            };
+        }
+
+        @Bean
+        @ConditionalOnBean(ClientCredentialsResourceDetails.class)
+        public OAuth2RestTemplate plainOAuth2ClientCredentialsRestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails) {
+            return new OAuth2RestTemplate(clientCredentialsResourceDetails);
+        }
     }
 
     @Configuration
@@ -85,7 +146,6 @@ public class OAuth2AutoConfiguration {
         public IxorTalkHttpSecurityConfigurer defaultIxorTalkHttpSecurityConfigurer() {
             return http -> http.authorizeRequests().anyRequest().authenticated();
         }
-
     }
 
     @Configuration
