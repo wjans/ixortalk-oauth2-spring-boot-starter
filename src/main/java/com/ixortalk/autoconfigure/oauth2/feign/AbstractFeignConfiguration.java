@@ -29,7 +29,6 @@ import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.hateoas.hal.Jackson2HalModule;
 
@@ -43,7 +42,6 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS
 public abstract class AbstractFeignConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean(name = "feignObjectMapper")
     public ObjectMapper feignObjectMapper() {
         return new ObjectMapper()
                 .findAndRegisterModules()
