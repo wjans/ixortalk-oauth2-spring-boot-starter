@@ -23,6 +23,7 @@
  */
 package com.ixortalk.autoconfigure.oauth2;
 
+import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.auth0.spring.security.api.authentication.AuthenticationJsonWebToken;
 import com.ixortalk.autoconfigure.oauth2.util.BearerTokenExtractor;
@@ -32,7 +33,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.AuthoritiesExtractor;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerTokenServicesConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoTokenServices;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -45,7 +48,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
-import org.springframework.security.oauth2.client.token.AccessTokenProvider;
 import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
 import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfiguration;
@@ -96,17 +98,45 @@ public class OAuth2AutoConfiguration {
         @Bean
         @ConditionalOnBean(ClientCredentialsResourceDetails.class)
         public OAuth2RestTemplate auth0ClientCredentialsOAuth2RestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails) {
+            return createAuth0ClientCredentialsRestTemplate(clientCredentialsResourceDetails, ixorTalkAuth0ConfigProperties.getAudience());
+        }
+
+        static OAuth2RestTemplate createAuth0ClientCredentialsRestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails, String audience) {
+            ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
+            clientCredentialsAccessTokenProvider.setTokenRequestEnhancer((request, resource, form, headers) -> form.set("audience", audience));
+
             OAuth2RestTemplate auth0OAuth2RestTemplate = new OAuth2RestTemplate(clientCredentialsResourceDetails);
-            auth0OAuth2RestTemplate.setAccessTokenProvider(clientCredentialsWithAudienceAccessTokenProvider());
+            auth0OAuth2RestTemplate.setAccessTokenProvider(clientCredentialsAccessTokenProvider);
             return auth0OAuth2RestTemplate;
         }
 
-        @Bean
-        public AccessTokenProvider clientCredentialsWithAudienceAccessTokenProvider() {
-            ClientCredentialsAccessTokenProvider clientCredentialsAccessTokenProvider = new ClientCredentialsAccessTokenProvider();
-            clientCredentialsAccessTokenProvider.setTokenRequestEnhancer((request, resource, form, headers) -> form.set("audience", ixorTalkAuth0ConfigProperties.getAudience()));
-            return clientCredentialsAccessTokenProvider;
+        @Configuration
+        @ConditionalOnBean(UserInfoTokenServices.class)
+        protected static class Auth0AuthoritiesExtractorConfiguration {
+
+            @Inject
+            private IxorTalkAuth0ConfigProperties ixorTalkAuth0ConfigProperties;
+
+            @Bean
+            public AuthoritiesExtractor auth0ManagementAPIAuthoritiesExtractor(ManagementAPI auth0ManagementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
+                return new Auth0AuthoritiesExtractor();
+            }
+
+            @Bean
+            public ManagementAPI auth0ManagementAPI(OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
+                return new ManagementAPI(ixorTalkAuth0ConfigProperties.getDomain(), auth0ManagementAPIRestTemplate.getAccessToken().getValue());
+            }
+
+            @Bean
+            public OAuth2RestTemplate auth0ManagementAPIRestTemplate() {
+                ClientCredentialsResourceDetails managementAPIResource = new ClientCredentialsResourceDetails();
+                managementAPIResource.setAccessTokenUri(format("https://%s/oauth/token", ixorTalkAuth0ConfigProperties.getDomain()));
+                managementAPIResource.setClientId(ixorTalkAuth0ConfigProperties.getClientId());
+                managementAPIResource.setClientSecret(ixorTalkAuth0ConfigProperties.getClientSecret());
+                return createAuth0ClientCredentialsRestTemplate(managementAPIResource, format("https://%s/api/v2/", ixorTalkAuth0ConfigProperties.getDomain()));
+            }
         }
+
     }
 
     @Configuration
@@ -149,6 +179,7 @@ public class OAuth2AutoConfiguration {
     }
 
     @Configuration
+    @ConditionalOnMissingBean(WebSecurityConfigurerAdapter.class)
     protected static class IxorTalkWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
 
         @Inject
