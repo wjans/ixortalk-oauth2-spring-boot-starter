@@ -30,6 +30,8 @@ public class IxorTalkAuth0ConfigProperties {
 
     private String domain;
     private String audience;
+    private String clientId;
+    private String clientSecret;
 
     public String getDomain() {
         return domain;
@@ -45,5 +47,21 @@ public class IxorTalkAuth0ConfigProperties {
 
     public void setAudience(String audience) {
         this.audience = audience;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
     }
 }
