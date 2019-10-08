@@ -141,6 +141,7 @@ public class OAuth2AutoConfiguration {
 
     @Configuration
     @Conditional(NoAuth0Condition.class)
+    @ConditionalOnProperty(prefix = "ixortalk.oauth2.resource-server", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Import({ResourceServerConfiguration.class, ResourceServerTokenServicesConfiguration.class})
     protected static class PlainOAuth2Configuration {
 
