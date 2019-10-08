@@ -41,6 +41,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -59,6 +60,7 @@ import org.springframework.security.oauth2.provider.authentication.OAuth2Authent
 import javax.inject.Inject;
 import java.util.List;
 
+import static com.ixortalk.autoconfigure.oauth2.OAuth2AutoConfiguration.IxorTalkWebSecurityConfigurerAdapter.DEFAULT_WEB_SECURITY_CONFIGURER_ADAPTER_ORDER;
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.isEmpty;
 
@@ -180,8 +182,10 @@ public class OAuth2AutoConfiguration {
     }
 
     @Configuration
-    @ConditionalOnMissingBean(WebSecurityConfigurerAdapter.class)
+    @Order(DEFAULT_WEB_SECURITY_CONFIGURER_ADAPTER_ORDER + 1)
     protected static class IxorTalkWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
+
+        public static final int DEFAULT_WEB_SECURITY_CONFIGURER_ADAPTER_ORDER = 100;
 
         @Inject
         private ManagementServerProperties managementServerProperties;
