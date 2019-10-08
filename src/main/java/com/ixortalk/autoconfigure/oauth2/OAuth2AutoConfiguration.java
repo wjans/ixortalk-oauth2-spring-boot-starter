@@ -26,6 +26,9 @@ package com.ixortalk.autoconfigure.oauth2;
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.auth0.spring.security.api.authentication.AuthenticationJsonWebToken;
+import com.ixortalk.autoconfigure.oauth2.claims.Auth0ClaimsProvider;
+import com.ixortalk.autoconfigure.oauth2.claims.ClaimsProvider;
+import com.ixortalk.autoconfigure.oauth2.claims.OAuth2ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.util.BearerTokenExtractor;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -56,6 +59,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -95,6 +99,11 @@ public class OAuth2AutoConfiguration {
 
                 throw new IllegalStateException("No bearer token present in security context");
             };
+        }
+
+        @Bean
+        public ClaimsProvider auth0ClaimsProvider() {
+            return new Auth0ClaimsProvider();
         }
 
         @Bean
@@ -168,6 +177,12 @@ public class OAuth2AutoConfiguration {
         @ConditionalOnBean(ClientCredentialsResourceDetails.class)
         public OAuth2RestTemplate plainOAuth2ClientCredentialsRestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails) {
             return new OAuth2RestTemplate(clientCredentialsResourceDetails);
+        }
+
+        @Bean
+        @ConditionalOnBean(JwtAccessTokenConverter.class)
+        public ClaimsProvider oAuth2ClaimsProvider() {
+            return new OAuth2ClaimsProvider();
         }
     }
 
