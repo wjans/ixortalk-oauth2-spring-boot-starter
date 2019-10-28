@@ -27,8 +27,9 @@ import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.auth0.spring.security.api.authentication.AuthenticationJsonWebToken;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0AuthoritiesExtractor;
-import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0RolesEndpoint;
-import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0UsersEndpoint;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0Roles;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0Users;
 import com.ixortalk.autoconfigure.oauth2.claims.Auth0ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.claims.ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.claims.OAuth2ClaimsProvider;
@@ -43,6 +44,8 @@ import org.springframework.boot.autoconfigure.security.oauth2.resource.Authoriti
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerTokenServicesConfiguration;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoTokenServices;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.Cache;
+import org.springframework.cache.guava.GuavaCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -68,8 +71,13 @@ import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenCo
 import javax.inject.Inject;
 import java.util.List;
 
+import static com.google.common.cache.CacheBuilder.newBuilder;
 import static com.ixortalk.autoconfigure.oauth2.OAuth2AutoConfiguration.IxorTalkWebSecurityConfigurerAdapter.DEFAULT_WEB_SECURITY_CONFIGURER_ADAPTER_ORDER;
+import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_ROLE_CACHE;
+import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_CACHE;
+import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_ROLE_CACHE;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.springframework.util.StringUtils.isEmpty;
 
 @Configuration
@@ -133,8 +141,13 @@ public class OAuth2AutoConfiguration {
             private IxorTalkAuth0ConfigProperties ixorTalkAuth0ConfigProperties;
 
             @Bean
-            public ManagementAPI auth0ManagementAPI() {
+            public ManagementAPI managementAPI() {
                 return new ManagementAPI(ixorTalkAuth0ConfigProperties.getDomain(), auth0ManagementAPIRestTemplate().getAccessToken().getValue());
+            }
+
+            @Bean
+            public Auth0ManagementAPI auth0ManagementAPI() {
+                return new Auth0ManagementAPI(managementAPI(), auth0ManagementAPIRestTemplate());
             }
 
             @Bean
@@ -147,19 +160,43 @@ public class OAuth2AutoConfiguration {
             }
 
             @Bean
-            public Auth0UsersEndpoint auth0UsersEndpoint() {
-                return new Auth0UsersEndpoint(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+            public Auth0Users auth0Users() {
+                return new Auth0Users(auth0ManagementAPI());
             }
 
             @Bean
-            public Auth0RolesEndpoint auth0RolesEndpoint() {
-                return new Auth0RolesEndpoint(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+            public Auth0Roles auth0Roles() {
+                return new Auth0Roles(auth0ManagementAPI());
             }
 
             @Bean
             @ConditionalOnBean(UserInfoTokenServices.class)
             public AuthoritiesExtractor auth0AuthoritiesExtractor() {
-                return new Auth0AuthoritiesExtractor(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+                return new Auth0AuthoritiesExtractor(managementAPI(), auth0ManagementAPIRestTemplate());
+            }
+
+            @Bean
+            public Cache auth0UserCache() {
+                return new GuavaCache(AUTH_0_USER_CACHE,
+                        newBuilder()
+                                .expireAfterWrite(ixorTalkAuth0ConfigProperties.getManagementApi().getUserCache().getTimeToLiveInSeconds(), SECONDS)
+                                .build());
+            }
+
+            @Bean
+            public Cache auth0RoleCache() {
+                return new GuavaCache(AUTH_0_ROLE_CACHE,
+                        newBuilder()
+                                .expireAfterWrite(ixorTalkAuth0ConfigProperties.getManagementApi().getRolesCache().getTimeToLiveInSeconds(), SECONDS)
+                                .build());
+            }
+
+            @Bean
+            public Cache auth0UserRoleCache() {
+                return new GuavaCache(AUTH_0_USER_ROLE_CACHE,
+                        newBuilder()
+                                .expireAfterWrite(ixorTalkAuth0ConfigProperties.getManagementApi().getUserRoleCache().getTimeToLiveInSeconds(), SECONDS)
+                                .build());
             }
         }
     }
