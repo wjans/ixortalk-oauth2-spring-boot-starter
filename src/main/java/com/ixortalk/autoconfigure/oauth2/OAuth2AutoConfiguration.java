@@ -26,6 +26,9 @@ package com.ixortalk.autoconfigure.oauth2;
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.auth0.spring.security.api.authentication.AuthenticationJsonWebToken;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0AuthoritiesExtractor;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0RolesEndpoint;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0UsersEndpoint;
 import com.ixortalk.autoconfigure.oauth2.claims.Auth0ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.claims.ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.claims.OAuth2ClaimsProvider;
@@ -44,6 +47,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -108,6 +112,7 @@ public class OAuth2AutoConfiguration {
 
         @Bean
         @ConditionalOnBean(ClientCredentialsResourceDetails.class)
+        @Primary
         public OAuth2RestTemplate auth0ClientCredentialsOAuth2RestTemplate(ClientCredentialsResourceDetails clientCredentialsResourceDetails) {
             return createAuth0ClientCredentialsRestTemplate(clientCredentialsResourceDetails, ixorTalkAuth0ConfigProperties.getAudience());
         }
@@ -122,20 +127,14 @@ public class OAuth2AutoConfiguration {
         }
 
         @Configuration
-        @ConditionalOnBean(UserInfoTokenServices.class)
-        protected static class Auth0AuthoritiesExtractorConfiguration {
+        protected static class Auth0ManagementAPIConfiguration {
 
             @Inject
             private IxorTalkAuth0ConfigProperties ixorTalkAuth0ConfigProperties;
 
             @Bean
-            public AuthoritiesExtractor auth0ManagementAPIAuthoritiesExtractor(ManagementAPI auth0ManagementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
-                return new Auth0AuthoritiesExtractor();
-            }
-
-            @Bean
-            public ManagementAPI auth0ManagementAPI(OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
-                return new ManagementAPI(ixorTalkAuth0ConfigProperties.getDomain(), auth0ManagementAPIRestTemplate.getAccessToken().getValue());
+            public ManagementAPI auth0ManagementAPI() {
+                return new ManagementAPI(ixorTalkAuth0ConfigProperties.getDomain(), auth0ManagementAPIRestTemplate().getAccessToken().getValue());
             }
 
             @Bean
@@ -146,8 +145,23 @@ public class OAuth2AutoConfiguration {
                 managementAPIResource.setClientSecret(ixorTalkAuth0ConfigProperties.getClientSecret());
                 return createAuth0ClientCredentialsRestTemplate(managementAPIResource, format("https://%s/api/v2/", ixorTalkAuth0ConfigProperties.getDomain()));
             }
-        }
 
+            @Bean
+            public Auth0UsersEndpoint auth0UsersEndpoint() {
+                return new Auth0UsersEndpoint(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+            }
+
+            @Bean
+            public Auth0RolesEndpoint auth0RolesEndpoint() {
+                return new Auth0RolesEndpoint(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+            }
+
+            @Bean
+            @ConditionalOnBean(UserInfoTokenServices.class)
+            public AuthoritiesExtractor auth0AuthoritiesExtractor() {
+                return new Auth0AuthoritiesExtractor(auth0ManagementAPI(), auth0ManagementAPIRestTemplate());
+            }
+        }
     }
 
     @Configuration

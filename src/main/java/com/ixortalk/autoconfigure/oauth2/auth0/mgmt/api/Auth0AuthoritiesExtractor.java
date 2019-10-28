@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.ixortalk.autoconfigure.oauth2;
+package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.exception.Auth0Exception;
@@ -31,20 +31,22 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 
 import static com.auth0.jwt.impl.PublicClaims.SUBJECT;
 import static java.util.stream.Collectors.toList;
 
-class Auth0AuthoritiesExtractor implements AuthoritiesExtractor {
+public class Auth0AuthoritiesExtractor implements AuthoritiesExtractor {
 
-    @Inject
     private ManagementAPI auth0ManagementAPI;
 
-    @Inject
     private OAuth2RestTemplate auth0ManagementAPIRestTemplate;
+
+    public Auth0AuthoritiesExtractor(ManagementAPI auth0ManagementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
+        this.auth0ManagementAPI = auth0ManagementAPI;
+        this.auth0ManagementAPIRestTemplate = auth0ManagementAPIRestTemplate;
+    }
 
     @Override
     public List<GrantedAuthority> extractAuthorities(Map<String, Object> map) {
