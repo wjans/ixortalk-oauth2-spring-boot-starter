@@ -31,10 +31,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class Auth0UsersEndpoint {
@@ -50,6 +53,10 @@ public class Auth0UsersEndpoint {
         this.auth0ManagementAPIRestTemplate = auth0ManagementAPIRestTemplate;
     }
 
+    public Map<String, UserInfo> listUsersByEmail() {
+        return listUsers().stream().map(this::createUserInfo).collect(toMap(UserInfo::getEmail, identity()));
+    }
+
     public Optional<UserInfo> getUserInfo(String email) {
         List<User> users = listUsersByEmail(email);
         if (users.isEmpty()) {
@@ -61,7 +68,7 @@ public class Auth0UsersEndpoint {
                         .stream()
                         .filter(user -> !isBlank(user.getFamilyName()))
                         .findFirst()
-                        .map(user -> new UserInfo(email, user.getGivenName(), user.getFamilyName()))
+                        .map(this::createUserInfo)
                         .orElse(new UserInfo(email)));
     }
 
@@ -80,5 +87,23 @@ public class Auth0UsersEndpoint {
             LOGGER.error("Error retrieving user '" + email + "' :" + e.getMessage(), e);
             throw new RuntimeException("Error retrieving user '" + email + "' :" + e.getMessage(), e);
         }
+    }
+
+    private List<User> listUsers() {
+        try {
+            auth0ManagementAPI.setApiToken(auth0ManagementAPIRestTemplate.getAccessToken().getValue());
+            return auth0ManagementAPI
+                    .users()
+                    .list(null)
+                    .execute()
+                    .getItems();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error retrieving users: " + e.getMessage(), e);
+            throw new RuntimeException("Error retrieving users: " + e.getMessage(), e);
+        }
+    }
+
+    private UserInfo createUserInfo(User user) {
+        return new UserInfo(user.getEmail(), user.getGivenName(), user.getFamilyName());
     }
 }
