@@ -23,6 +23,8 @@
  */
 package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
+
 public class UserInfo {
 
     private String email;
@@ -49,5 +51,13 @@ public class UserInfo {
 
     public String getLastName() {
         return lastName;
+    }
+
+    public boolean hasFirstName() {
+        return !isBlank(this.firstName);
+    }
+
+    public boolean hasLastName() {
+        return !isBlank(this.lastName);
     }
 }

@@ -59,6 +59,10 @@ public class Auth0Roles {
     }
 
     public void assignRolesToUser(String email, Set<String> roleNamesToAssign) {
+        if (roleNamesToAssign.isEmpty()) {
+            return;
+        }
+
         this.auth0ManagementAPI
                 .assignRolesToUser(
                         this.auth0ManagementAPI.listUsersByEmail().get(email).getId(),
@@ -67,6 +71,10 @@ public class Auth0Roles {
     }
 
     public void removeRolesFromUser(String email, Set<String> roleNamesToRemove) {
+        if (roleNamesToRemove.isEmpty()) {
+            return;
+        }
+
         this.auth0ManagementAPI
                 .removeRolesFromUser(
                         this.auth0ManagementAPI.listUsersByEmail().get(email).getId(),
