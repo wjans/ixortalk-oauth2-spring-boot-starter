@@ -27,6 +27,8 @@ import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.exception.Auth0Exception;
 import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.users.User;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.RolesFilterAdapter;
+import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.UserFilterAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -36,6 +38,7 @@ import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import java.util.List;
 import java.util.Map;
 
+import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.PageUtil.listItemsFromAllPages;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -44,6 +47,8 @@ public class Auth0ManagementAPI {
     public static final String AUTH_0_USER_CACHE = "auth0UserCache";
     public static final String AUTH_0_ROLE_CACHE = "auth0RoleCache";
     public static final String AUTH_0_USER_ROLE_CACHE = "auth0UserRoleCache";
+
+    public static final int PAGE_SIZE = 100;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Auth0ManagementAPI.class);
 
@@ -59,13 +64,10 @@ public class Auth0ManagementAPI {
     @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
     public Map<String, User> listUsersByEmail() {
         try {
-            return getManagementAPI()
-                    .users()
-                    .list(null)
-                    .execute()
-                    .getItems()
-                    .stream()
-                    .collect(toMap(User::getEmail, identity()));
+            return
+                    listItemsFromAllPages(getManagementAPI().users()::list, new UserFilterAdapter())
+                            .stream()
+                            .collect(toMap(User::getEmail, identity()));
         } catch (Auth0Exception e) {
             LOGGER.error("Error retrieving users: " + e.getMessage(), e);
             throw new RuntimeException("Error retrieving users: " + e.getMessage(), e);
@@ -75,13 +77,10 @@ public class Auth0ManagementAPI {
     @Cacheable(cacheNames = AUTH_0_ROLE_CACHE, sync = true)
     public Map<String, Role> listRolesByName() {
         try {
-            return getManagementAPI()
-                    .roles()
-                    .list(null)
-                    .execute()
-                    .getItems()
-                    .stream()
-                    .collect(toMap(Role::getName, identity()));
+            return
+                    listItemsFromAllPages(getManagementAPI().roles()::list, new RolesFilterAdapter())
+                            .stream()
+                            .collect(toMap(Role::getName, identity()));
         } catch (Auth0Exception e) {
             LOGGER.error("Error retrieving roles: " + e.getMessage(), e);
             throw new RuntimeException("Error retrieving roles: " + e.getMessage(), e);
