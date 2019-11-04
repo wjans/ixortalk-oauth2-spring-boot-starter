@@ -33,6 +33,8 @@ public class IxorTalkAuth0ConfigProperties {
     private String clientId;
     private String clientSecret;
 
+    private ManagementApi managementApi = new ManagementApi();
+
     public String getDomain() {
         return domain;
     }
@@ -63,5 +65,41 @@ public class IxorTalkAuth0ConfigProperties {
 
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+    }
+
+    public ManagementApi getManagementApi() {
+        return managementApi;
+    }
+
+    public static class ManagementApi {
+
+        private Cache userCache = new Cache();
+        private Cache rolesCache = new Cache();
+        private Cache userRoleCache = new Cache();
+
+        public Cache getUserCache() {
+            return userCache;
+        }
+
+        public Cache getRolesCache() {
+            return rolesCache;
+        }
+
+        public Cache getUserRoleCache() {
+            return userRoleCache;
+        }
+    }
+
+    public static class Cache {
+
+        private int timeToLiveInSeconds = 2;
+
+        public int getTimeToLiveInSeconds() {
+            return timeToLiveInSeconds;
+        }
+
+        public void setTimeToLiveInSeconds(int timeToLiveInSeconds) {
+            this.timeToLiveInSeconds = timeToLiveInSeconds;
+        }
     }
 }
