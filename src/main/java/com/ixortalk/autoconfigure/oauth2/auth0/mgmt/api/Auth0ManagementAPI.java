@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.PageUtil.listItemsFromAllPages;
+import static java.util.Collections.singletonMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -56,9 +57,12 @@ public class Auth0ManagementAPI {
 
     private OAuth2RestTemplate auth0ManagementAPIRestTemplate;
 
-    public Auth0ManagementAPI(ManagementAPI managementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate) {
+    private String createUserConnection;
+
+    public Auth0ManagementAPI(ManagementAPI managementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate, String createUserConnection) {
         this.managementAPI = managementAPI;
         this.auth0ManagementAPIRestTemplate = auth0ManagementAPIRestTemplate;
+        this.createUserConnection = createUserConnection;
     }
 
     @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
@@ -154,6 +158,43 @@ public class Auth0ManagementAPI {
         } catch (Auth0Exception e) {
             LOGGER.error("Error removing roles from user '" + userId + "' :" + e.getMessage(), e);
             throw new RuntimeException("Error removing roles from user '" + userId + "' :" + e.getMessage(), e);
+        }
+    }
+
+    @CacheEvict(cacheNames = AUTH_0_USER_CACHE)
+    public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey) {
+        User user = new User();
+        user.setEmail(email);
+        user.setEmailVerified(true);
+        user.setPassword(password);
+        user.setGivenName(firstName);
+        user.setFamilyName(lastName);
+        user.setBlocked(true);
+        user.setConnection(createUserConnection);
+        user.setUserMetadata(singletonMap("user_lang", langKey));
+
+        try {
+            getManagementAPI()
+                    .users()
+                    .create(user)
+                    .execute();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
+            throw new RuntimeException("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
+        }
+    }
+
+    public void unblockUser(String userId) {
+        try {
+            User unblocked = new User();
+            unblocked.setBlocked(false);
+            getManagementAPI()
+                    .users()
+                    .update(userId, unblocked)
+                    .execute();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
+            throw new RuntimeException("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 

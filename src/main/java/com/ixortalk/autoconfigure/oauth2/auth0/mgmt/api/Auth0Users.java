@@ -57,6 +57,14 @@ public class Auth0Users {
         return auth0ManagementAPI.listUsersByEmail().containsKey(email);
     }
 
+    public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey) {
+        auth0ManagementAPI.createBlockedUser(email, password, firstName, lastName, langKey);
+    }
+
+    public void unblockUser(String email) {
+        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.unblockUser(user.getId()));
+    }
+
     private static UserInfo toUserInfo(User user) {
         return new UserInfo(
                 user.getEmail(),

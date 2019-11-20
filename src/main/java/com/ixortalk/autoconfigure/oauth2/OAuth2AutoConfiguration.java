@@ -147,7 +147,7 @@ public class OAuth2AutoConfiguration {
 
             @Bean
             public Auth0ManagementAPI auth0ManagementAPI() {
-                return new Auth0ManagementAPI(managementAPI(), auth0ManagementAPIRestTemplate());
+                return new Auth0ManagementAPI(managementAPI(), auth0ManagementAPIRestTemplate(), ixorTalkAuth0ConfigProperties.getManagementApi().getCreateUserConnection());
             }
 
             @Bean
