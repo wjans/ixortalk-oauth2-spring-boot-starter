@@ -36,6 +36,7 @@ import com.ixortalk.autoconfigure.oauth2.claims.OAuth2ClaimsProvider;
 import com.ixortalk.autoconfigure.oauth2.util.BearerTokenExtractor;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -87,7 +88,7 @@ public class OAuth2AutoConfiguration {
 
     @Configuration
     @EnableConfigurationProperties(IxorTalkAuth0ConfigProperties.class)
-    @ConditionalOnProperty(prefix = "ixortalk.auth0", name = "domain")
+    @Conditional(Auth0Condition.class)
     protected static class Auth0Configuration implements IxorTalkHttpSecurityConfigurer {
 
         @Inject
@@ -147,7 +148,7 @@ public class OAuth2AutoConfiguration {
 
             @Bean
             public Auth0ManagementAPI auth0ManagementAPI() {
-                return new Auth0ManagementAPI(managementAPI(), auth0ManagementAPIRestTemplate());
+                return new Auth0ManagementAPI(managementAPI(), auth0ManagementAPIRestTemplate(), ixorTalkAuth0ConfigProperties.getManagementApi().getCreateUserConnection());
             }
 
             @Bean
@@ -279,16 +280,28 @@ public class OAuth2AutoConfiguration {
         }
     }
 
-    static class NoAuth0Condition extends NoneNestedConditions {
+    public static class NoAuth0Condition extends NoneNestedConditions {
 
         NoAuth0Condition() {
             super(ConfigurationPhase.PARSE_CONFIGURATION);
         }
 
-        @ConditionalOnProperty(prefix = "ixortalk.auth0", name = "domain")
-        static class Auth0Condition {
+        @Conditional(Auth0Condition.class)
+        static class Auth0ConditionMatched {
 
         }
-
     }
+
+    public static class Auth0Condition extends AllNestedConditions {
+
+        public Auth0Condition() {
+            super(ConfigurationPhase.PARSE_CONFIGURATION);
+        }
+
+        @ConditionalOnProperty(prefix = "ixortalk.auth0", name = "domain")
+        static class AuthDomainConfigured {
+
+        }
+    }
+
 }

@@ -77,6 +77,8 @@ public class IxorTalkAuth0ConfigProperties {
         private Cache rolesCache = new Cache();
         private Cache userRoleCache = new Cache();
 
+        private String createUserConnection = "Username-Password-Authentication";
+
         public Cache getUserCache() {
             return userCache;
         }
@@ -87,6 +89,14 @@ public class IxorTalkAuth0ConfigProperties {
 
         public Cache getUserRoleCache() {
             return userRoleCache;
+        }
+
+        public String getCreateUserConnection() {
+            return createUserConnection;
+        }
+
+        public void setCreateUserConnection(String createUserConnection) {
+            this.createUserConnection = createUserConnection;
         }
     }
 
