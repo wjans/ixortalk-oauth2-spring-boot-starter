@@ -74,7 +74,7 @@ public class Auth0ManagementAPI {
                             .collect(toMap(User::getEmail, identity()));
         } catch (Auth0Exception e) {
             LOGGER.error("Error retrieving users: " + e.getMessage(), e);
-            throw new RuntimeException("Error retrieving users: " + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving users: " + e.getMessage(), e);
         }
     }
 
@@ -87,7 +87,7 @@ public class Auth0ManagementAPI {
                             .collect(toMap(Role::getName, identity()));
         } catch (Auth0Exception e) {
             LOGGER.error("Error retrieving roles: " + e.getMessage(), e);
-            throw new RuntimeException("Error retrieving roles: " + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving roles: " + e.getMessage(), e);
         }
     }
 
@@ -102,7 +102,7 @@ public class Auth0ManagementAPI {
                             .getItems();
         } catch (Auth0Exception e) {
             LOGGER.error("Error retrieving roles for user '" + userId + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error retrieving roles for user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving roles for user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 
@@ -118,7 +118,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error creating role '" + roleName + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error creating role '" + roleName + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error creating role '" + roleName + "' :" + e.getMessage(), e);
         }
     }
 
@@ -131,7 +131,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error deleting role '" + roleId + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error deleting role '" + roleId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error deleting role '" + roleId + "' :" + e.getMessage(), e);
         }
     }
 
@@ -144,7 +144,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error assigning roles to user '" + userId + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error assigning roles to user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error assigning roles to user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 
@@ -157,7 +157,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error removing roles from user '" + userId + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error removing roles from user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error removing roles from user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 
@@ -180,7 +180,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
         }
     }
 
@@ -194,7 +194,7 @@ public class Auth0ManagementAPI {
                     .execute();
         } catch (Auth0Exception e) {
             LOGGER.error("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
-            throw new RuntimeException("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 
