@@ -161,7 +161,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = AUTH_0_USER_CACHE)
+    @CacheEvict(cacheNames = AUTH_0_USER_CACHE, allEntries = true)
     public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey) {
         User user = new User();
         user.setEmail(email);
