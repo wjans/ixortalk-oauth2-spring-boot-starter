@@ -162,7 +162,7 @@ public class Auth0ManagementAPI {
     }
 
     @CacheEvict(cacheNames = AUTH_0_USER_CACHE, allEntries = true)
-    public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey) {
+    public void createBlockedUserWithRoles(String email, String password, String firstName, String lastName, String langKey, List<String> roleIds) {
         User user = new User();
         user.setEmail(email);
         user.setEmailVerified(true);
@@ -174,10 +174,12 @@ public class Auth0ManagementAPI {
         user.setUserMetadata(singletonMap("user_lang", langKey));
 
         try {
-            getManagementAPI()
-                    .users()
-                    .create(user)
-                    .execute();
+            User createdUser =
+                    getManagementAPI()
+                            .users()
+                            .create(user)
+                            .execute();
+            assignRolesToUser(createdUser.getId(), roleIds);
         } catch (Auth0Exception e) {
             LOGGER.error("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
             throw new Auth0RuntimeException("Error creating blocked user '" + email + "' :" + e.getMessage(), e);

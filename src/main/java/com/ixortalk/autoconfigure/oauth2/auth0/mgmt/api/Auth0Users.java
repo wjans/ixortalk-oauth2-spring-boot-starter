@@ -25,10 +25,12 @@ package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
 import com.auth0.json.mgmt.users.User;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class Auth0Users {
@@ -57,8 +59,14 @@ public class Auth0Users {
         return auth0ManagementAPI.listUsersByEmail().containsKey(email);
     }
 
-    public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey) {
-        auth0ManagementAPI.createBlockedUser(email, password, firstName, lastName, langKey);
+    public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey, List<String> roleNamesToAssign) {
+        auth0ManagementAPI.createBlockedUserWithRoles(
+                email,
+                password,
+                firstName,
+                lastName,
+                langKey,
+                roleNamesToAssign.stream().map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId()).collect(toList()));
     }
 
     public void unblockUser(String email) {
