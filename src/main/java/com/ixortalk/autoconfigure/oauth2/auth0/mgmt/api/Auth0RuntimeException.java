@@ -27,6 +27,10 @@ import com.auth0.exception.Auth0Exception;
 
 public class Auth0RuntimeException extends RuntimeException {
 
+    public Auth0RuntimeException(String message) {
+        super(message);
+    }
+
     public Auth0RuntimeException(String message, Auth0Exception cause) {
         super(message, cause);
     }
