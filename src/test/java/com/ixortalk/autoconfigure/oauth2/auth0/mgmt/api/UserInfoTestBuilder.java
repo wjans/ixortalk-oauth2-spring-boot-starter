@@ -30,6 +30,7 @@ public class UserInfoTestBuilder {
     private String email = nextString("user") + "@ixortalk.com";
     private String firstName;
     private String lastName;
+    private String profilePictureUrl;
 
     private UserInfoTestBuilder() {
     }
@@ -39,7 +40,7 @@ public class UserInfoTestBuilder {
     }
 
     public UserInfo build() {
-        return new UserInfo(email, firstName, lastName);
+        return new UserInfo(email, firstName, lastName, profilePictureUrl);
     }
 
     public UserInfoTestBuilder withEmail(String email) {
@@ -54,6 +55,11 @@ public class UserInfoTestBuilder {
 
     public UserInfoTestBuilder withLastName(String lastName) {
         this.lastName = lastName;
+        return this;
+    }
+
+    public UserInfoTestBuilder withProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
         return this;
     }
 }
