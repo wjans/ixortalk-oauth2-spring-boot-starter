@@ -187,16 +187,26 @@ public class Auth0ManagementAPI {
     }
 
     public void unblockUser(String userId) {
+        User unblocked = new User();
+        unblocked.setBlocked(false);
+        updateUser(userId, unblocked);
+    }
+
+    public void updateProfilePicture(String userId, String profilePictureUrl) {
+        User updated = new User();
+        updated.setPicture(profilePictureUrl);
+        updateUser(userId, updated);
+    }
+
+    private void updateUser(String userId, User update) {
         try {
-            User unblocked = new User();
-            unblocked.setBlocked(false);
             getManagementAPI()
                     .users()
-                    .update(userId, unblocked)
+                    .update(userId, update)
                     .execute();
         } catch (Auth0Exception e) {
-            LOGGER.error("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
-            throw new Auth0RuntimeException("Error unblocking user '" + userId + "' :" + e.getMessage(), e);
+            LOGGER.error("Error updating user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error updating user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 

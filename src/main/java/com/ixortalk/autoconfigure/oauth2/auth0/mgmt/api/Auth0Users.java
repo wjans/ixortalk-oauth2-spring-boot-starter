@@ -73,6 +73,10 @@ public class Auth0Users {
         ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.unblockUser(user.getId()));
     }
 
+    public void updateProfilePicture(String email, String profilePictureUrl) {
+        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl));
+    }
+
     private static UserInfo toUserInfo(User user) {
         return new UserInfo(
                 user.getEmail(),
