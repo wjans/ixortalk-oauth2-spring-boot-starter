@@ -81,6 +81,7 @@ public class Auth0Users {
         return new UserInfo(
                 user.getEmail(),
                 user.getGivenName(),
-                user.getFamilyName());
+                user.getFamilyName(),
+                user.getPicture());
     }
 }

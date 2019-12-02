@@ -30,11 +30,13 @@ public class UserInfo {
     private String email;
     private String firstName;
     private String lastName;
+    private String profilePictureUrl;
 
-    public UserInfo(String email, String firstName, String lastName) {
+    public UserInfo(String email, String firstName, String lastName, String profilePictureUrl) {
         this(email);
         this.firstName = firstName;
         this.lastName = lastName;
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     public UserInfo(String email) {
@@ -51,6 +53,10 @@ public class UserInfo {
 
     public String getLastName() {
         return lastName;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
     }
 
     public boolean hasFirstName() {
