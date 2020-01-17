@@ -25,21 +25,27 @@ package com.ixortalk.autoconfigure.oauth2.feign;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
-import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+
+import javax.inject.Inject;
 
 import static com.ixortalk.autoconfigure.oauth2.util.AuthTokenHelper.authorizationHeader;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 public class OAuth2FeignRequestInterceptor implements RequestInterceptor {
 
-    private OAuth2RestTemplate oAuth2RestTemplate;
+    @Inject
+    private AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager;
 
-    public OAuth2FeignRequestInterceptor(OAuth2RestTemplate oAuth2RestTemplate) {
-        this.oAuth2RestTemplate = oAuth2RestTemplate;
+    private OAuth2AuthorizeRequest oAuth2AuthorizeRequest;
+
+    OAuth2FeignRequestInterceptor(OAuth2AuthorizeRequest oAuth2AuthorizeRequest) {
+        this.oAuth2AuthorizeRequest = oAuth2AuthorizeRequest;
     }
 
     @Override
     public void apply(RequestTemplate template) {
-        template.header(AUTHORIZATION, authorizationHeader(oAuth2RestTemplate.getAccessToken()));
+        template.header(AUTHORIZATION, authorizationHeader(authorizedClientServiceOAuth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest).getAccessToken().getTokenValue()));
     }
 }

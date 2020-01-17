@@ -21,31 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.ixortalk.autoconfigure.oauth2.claims;
+package com.ixortalk.autoconfigure.oauth2.auth0;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.jwt.Jwt;
-import org.springframework.security.oauth2.common.util.JsonParser;
-import org.springframework.security.oauth2.common.util.JsonParserFactory;
-import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.RequestEntity;
+import org.springframework.security.oauth2.client.endpoint.AbstractOAuth2AuthorizationGrantRequest;
+import org.springframework.util.MultiValueMap;
 
-import java.util.Map;
-import java.util.Optional;
+public class AudienceRequestEntityConverter<T extends AbstractOAuth2AuthorizationGrantRequest> implements Converter<T, RequestEntity<?>> {
 
-import static java.lang.String.valueOf;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static org.springframework.security.jwt.JwtHelper.decode;
+    private String audience;
 
-public class OAuth2ClaimsProvider implements ClaimsProvider {
+    private Converter<T, RequestEntity<?>> defaultConverter;
 
-    private JsonParser objectMapper = JsonParserFactory.create();
+    public AudienceRequestEntityConverter(String audience, Converter<T, RequestEntity<?>> defaultConverter) {
+        this.audience = audience;
+        this.defaultConverter = defaultConverter;
+    }
 
     @Override
-    public Optional<String> getClaim(String key) {
-        String tokenValue = ((OAuth2AuthenticationDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getTokenValue();
-        Jwt jwt = decode(tokenValue);
-        Map<String, Object> map = objectMapper.parseMap(jwt.getClaims());
-        return map.containsKey(key) ? of(valueOf(map.get(key))) : empty();
+    public RequestEntity<?> convert(T request) {
+        RequestEntity<?> entity = defaultConverter.convert(request);
+        MultiValueMap<String, String> params = (MultiValueMap<String, String>) entity.getBody();
+        params.add("audience", this.audience);
+        return new RequestEntity<>(params, entity.getHeaders(), entity.getMethod(), entity.getUrl());
     }
+
 }

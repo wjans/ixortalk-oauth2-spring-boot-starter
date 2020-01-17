@@ -23,7 +23,7 @@
  */
 package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class UserInfo {
 

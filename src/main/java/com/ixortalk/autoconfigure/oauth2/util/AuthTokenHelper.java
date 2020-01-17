@@ -23,18 +23,18 @@
  */
 package com.ixortalk.autoconfigure.oauth2.util;
 
-import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
+import static com.nimbusds.oauth2.sdk.token.AccessTokenType.BEARER;
 import static java.lang.String.format;
-import static org.springframework.security.oauth2.common.OAuth2AccessToken.BEARER_TYPE;
 
 public class AuthTokenHelper {
 
     public static String authorizationHeader(OAuth2AccessToken oAuth2AccessToken) {
-        return authorizationHeader(oAuth2AccessToken.getValue());
+        return authorizationHeader(oAuth2AccessToken.getTokenValue());
     }
 
     public static String authorizationHeader(String accessToken) {
-        return format("%s %s", BEARER_TYPE, accessToken);
+        return format("%s %s", BEARER, accessToken);
     }
 }
