@@ -21,11 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.ixortalk.autoconfigure.oauth2.claims;
+package com.ixortalk.autoconfigure.oauth2;
 
-import java.util.Optional;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 
-public interface ClaimsProvider {
+class AudienceValidator implements OAuth2TokenValidator<Jwt> {
+    private final String audience;
 
-    Optional<String> getClaim(String key);
+    AudienceValidator(String audience) {
+        this.audience = audience;
+    }
+
+    public OAuth2TokenValidatorResult validate(Jwt jwt) {
+        OAuth2Error error = new OAuth2Error("invalid_token", "The required audience is missing", null);
+        
+        if (jwt.getAudience().contains(audience)) {
+            return OAuth2TokenValidatorResult.success();
+        }
+
+        return OAuth2TokenValidatorResult.failure(error);
+    }
 }

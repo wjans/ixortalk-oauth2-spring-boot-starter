@@ -23,19 +23,26 @@
  */
 package com.ixortalk.autoconfigure.oauth2.feign;
 
+import com.ixortalk.autoconfigure.oauth2.IxorTalkConfigProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 
 import javax.inject.Inject;
+
+import static org.springframework.security.core.authority.AuthorityUtils.createAuthorityList;
+import static org.springframework.security.oauth2.client.OAuth2AuthorizeRequest.withClientRegistrationId;
 
 public class ServiceToServiceFeignConfiguration extends AbstractFeignConfiguration {
 
     @Inject
-    private OAuth2RestTemplate oAuth2RestTemplate;
+    private IxorTalkConfigProperties ixorTalkConfigProperties;
 
     @Bean
     public OAuth2FeignRequestInterceptor requestInterceptor() {
-        return new OAuth2FeignRequestInterceptor(oAuth2RestTemplate);
+        return new OAuth2FeignRequestInterceptor(
+                withClientRegistrationId(ixorTalkConfigProperties.getSecurity().getFeign().getServiceToServiceClientRegistrationId())
+                        .principal(new AnonymousAuthenticationToken("feignClient", "feignClient", createAuthorityList()))
+                        .build());
     }
 }
 

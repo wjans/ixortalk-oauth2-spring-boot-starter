@@ -23,22 +23,23 @@
  */
 package com.ixortalk.autoconfigure.oauth2.feign;
 
-import com.ixortalk.autoconfigure.oauth2.util.BearerTokenExtractor;
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
-
-import javax.inject.Inject;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.AbstractOAuth2Token;
+import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 
 import static com.ixortalk.autoconfigure.oauth2.util.AuthTokenHelper.authorizationHeader;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 public class TokenRelayFeignConfiguration extends AbstractFeignConfiguration {
 
-    @Inject
-    private BearerTokenExtractor bearerTokenExtractor;
-
     @Bean
     public RequestInterceptor requestInterceptor() {
-        return restTemplate -> restTemplate.header(AUTHORIZATION, authorizationHeader(bearerTokenExtractor.getBearerTokenValue()));
+        return restTemplate -> restTemplate.header(AUTHORIZATION, authorizationHeader(currentOAuth2Token().getTokenValue()));
+    }
+
+    private static AbstractOAuth2Token currentOAuth2Token() {
+        return ((AbstractOAuth2TokenAuthenticationToken<?>) SecurityContextHolder.getContext().getAuthentication()).getToken();
     }
 }

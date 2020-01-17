@@ -33,7 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -55,14 +56,18 @@ public class Auth0ManagementAPI {
 
     private ManagementAPI managementAPI;
 
-    private OAuth2RestTemplate auth0ManagementAPIRestTemplate;
+    private OAuth2AuthorizeRequest authorizeRequest;
 
     private String createUserConnection;
 
-    public Auth0ManagementAPI(ManagementAPI managementAPI, OAuth2RestTemplate auth0ManagementAPIRestTemplate, String createUserConnection) {
-        this.managementAPI = managementAPI;
-        this.auth0ManagementAPIRestTemplate = auth0ManagementAPIRestTemplate;
+    private AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager;
+
+    public Auth0ManagementAPI(String domain, String createUserConnection, AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager, OAuth2AuthorizeRequest authorizeRequest) {
         this.createUserConnection = createUserConnection;
+        this.authorizedClientServiceOAuth2AuthorizedClientManager = authorizedClientServiceOAuth2AuthorizedClientManager;
+        this.authorizeRequest = authorizeRequest;
+
+        this.managementAPI = new ManagementAPI(domain, getAccessToken());
     }
 
     @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
@@ -211,7 +216,11 @@ public class Auth0ManagementAPI {
     }
 
     private ManagementAPI getManagementAPI() {
-        managementAPI.setApiToken(auth0ManagementAPIRestTemplate.getAccessToken().getValue());
+        managementAPI.setApiToken(getAccessToken());
         return managementAPI;
+    }
+
+    private String getAccessToken() {
+        return this.authorizedClientServiceOAuth2AuthorizedClientManager.authorize(authorizeRequest).getAccessToken().getTokenValue();
     }
 }
