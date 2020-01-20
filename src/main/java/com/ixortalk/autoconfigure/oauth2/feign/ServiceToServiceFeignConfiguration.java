@@ -41,7 +41,7 @@ public class ServiceToServiceFeignConfiguration extends AbstractFeignConfigurati
     public OAuth2FeignRequestInterceptor requestInterceptor() {
         return new OAuth2FeignRequestInterceptor(
                 withClientRegistrationId(ixorTalkConfigProperties.getSecurity().getFeign().getServiceToServiceClientRegistrationId())
-                        .principal(new AnonymousAuthenticationToken("feignClient", "feignClient", createAuthorityList()))
+                        .principal(new AnonymousAuthenticationToken("feignClient", "feignClient", createAuthorityList("ROLE_ANONYMOUS")))
                         .build());
     }
 }

@@ -47,6 +47,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
@@ -179,14 +180,25 @@ public class OAuth2AutoConfiguration {
             return clientCredentialsTokenResponseClient;
         }
 
+        private OAuth2AuthorizedClientProvider oAuth2AuthorizedClientProvider() {
+            return builder()
+                    .clientCredentials(configurer -> configurer.accessTokenResponseClient(clientCredentialsTokenResponseClient()))
+                    .build();
+        }
+
         @Bean
-        OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
+        public OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
                                                               OAuth2AuthorizedClientRepository authorizedClientRepository) {
             DefaultOAuth2AuthorizedClientManager authorizedClientManager = new DefaultOAuth2AuthorizedClientManager(clientRegistrationRepository, authorizedClientRepository);
-            authorizedClientManager.setAuthorizedClientProvider(
-                    builder()
-                            .clientCredentials(configurer -> configurer.accessTokenResponseClient(clientCredentialsTokenResponseClient()))
-                            .build());
+            authorizedClientManager.setAuthorizedClientProvider(oAuth2AuthorizedClientProvider());
+            return authorizedClientManager;
+        }
+
+        @Bean
+        public AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
+                                                                                                                              OAuth2AuthorizedClientService oAuth2AuthorizedClientService) {
+            AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientManager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, oAuth2AuthorizedClientService);
+            authorizedClientManager.setAuthorizedClientProvider(oAuth2AuthorizedClientProvider());
             return authorizedClientManager;
         }
 
@@ -197,17 +209,17 @@ public class OAuth2AutoConfiguration {
             private IxorTalkConfigProperties ixorTalkConfigProperties;
 
             @Bean
-            public Auth0ManagementAPI auth0ManagementAPI(AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager) {
+            public Auth0ManagementAPI auth0ManagementAPI(AuthorizedClientServiceOAuth2AuthorizedClientManager auth0AuthorizedClientServiceOAuth2AuthorizedClientManager) {
                 OAuth2AuthorizeRequest authorizeRequest =
                         withClientRegistrationId(ixorTalkConfigProperties.getAuth0().getManagementApi().getClientRegistrationId())
                                 .principal(new AnonymousAuthenticationToken("auth0ManagementAPI", "auth0ManagementAPI", createAuthorityList("ROLE_ANONYMOUS")))
                                 .build();
 
-                return new Auth0ManagementAPI(ixorTalkConfigProperties.getAuth0().getDomain(), ixorTalkConfigProperties.getAuth0().getManagementApi().getCreateUserConnection(), authorizedClientServiceOAuth2AuthorizedClientManager, authorizeRequest);
+                return new Auth0ManagementAPI(ixorTalkConfigProperties.getAuth0().getDomain(), ixorTalkConfigProperties.getAuth0().getManagementApi().getCreateUserConnection(), auth0AuthorizedClientServiceOAuth2AuthorizedClientManager, authorizeRequest);
             }
 
             @Bean
-            public AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
+            public AuthorizedClientServiceOAuth2AuthorizedClientManager auth0AuthorizedClientServiceOAuth2AuthorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
                                                                                                                       OAuth2AuthorizedClientService oAuth2AuthorizedClientService) {
                 AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientManager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, oAuth2AuthorizedClientService);
                 authorizedClientManager.setAuthorizedClientProvider(
