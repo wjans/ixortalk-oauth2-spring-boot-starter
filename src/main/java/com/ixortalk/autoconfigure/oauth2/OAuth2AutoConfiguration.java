@@ -37,6 +37,7 @@ import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -71,6 +72,7 @@ import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAP
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest.toAnyEndpoint;
 import static org.springframework.security.core.authority.AuthorityUtils.createAuthorityList;
 import static org.springframework.security.oauth2.client.OAuth2AuthorizeRequest.withClientRegistrationId;
 import static org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder.builder;
@@ -138,6 +140,20 @@ public class OAuth2AutoConfiguration {
         public GrantedAuthorityDefaults grantedAuthorityDefaults() {
             return new GrantedAuthorityDefaults("");
         }
+
+        @Configuration(proxyBeanMethods = false)
+        @ConditionalOnProperty(value = "ixortalk.actuator.security.disabled", havingValue = "true")
+        @Order(99)
+        public static class ActuatorSecurity extends WebSecurityConfigurerAdapter {
+
+            @Override
+            protected void configure(HttpSecurity http) throws Exception {
+                http.requestMatcher(toAnyEndpoint())
+                        .authorizeRequests((requests) -> requests.anyRequest().permitAll());
+            }
+
+        }
+
     }
 
     @Configuration
