@@ -70,6 +70,7 @@ import static com.github.benmanes.caffeine.cache.Caffeine.newBuilder;
 import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_ROLE_CACHE;
 import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_CACHE;
 import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_ROLE_CACHE;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toSet;
@@ -117,6 +118,8 @@ public class OAuth2AutoConfiguration {
 
                 if (authorities instanceof Collection) {
                     return ((Collection<String>) authorities).stream().map(SimpleGrantedAuthority::new).collect(toSet());
+                } else if (authorities instanceof String) {
+                    return stream(((String) authorities).split(" ")).map(SimpleGrantedAuthority::new).collect(toSet());
                 }
 
                 return emptyList();
@@ -152,9 +155,7 @@ public class OAuth2AutoConfiguration {
                 http.requestMatcher(toAnyEndpoint())
                         .authorizeRequests((requests) -> requests.anyRequest().permitAll());
             }
-
         }
-
     }
 
     @Configuration
