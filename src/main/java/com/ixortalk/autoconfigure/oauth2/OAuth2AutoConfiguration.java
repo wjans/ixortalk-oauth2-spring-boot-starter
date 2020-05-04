@@ -30,6 +30,7 @@ import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0Users;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.Cache;
@@ -44,11 +45,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.*;
 import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2ClientCredentialsGrantRequest;
@@ -67,9 +64,7 @@ import javax.inject.Inject;
 import java.util.Collection;
 
 import static com.github.benmanes.caffeine.cache.Caffeine.newBuilder;
-import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_ROLE_CACHE;
-import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_CACHE;
-import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.AUTH_0_USER_ROLE_CACHE;
+import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI.*;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -94,16 +89,23 @@ public class OAuth2AutoConfiguration {
         @Inject
         private IxorTalkConfigProperties ixorTalkConfigProperties;
 
+        @Inject
+        private IxorTalkHttpSecurityConfigurer ixorTalkHttpSecurityConfigurer;
+
         @Override
         public void configure(HttpSecurity http) throws Exception {
+            ixorTalkHttpSecurityConfigurer.configure(http);
             http
-                    .authorizeRequests(authorizeRequests ->
-                            authorizeRequests
-                                    .anyRequest().authenticated()
-                    )
+                    .csrf().disable()
                     .oauth2ResourceServer()
                     .jwt()
                     .jwtAuthenticationConverter(jwtAuthenticationConverter());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(IxorTalkHttpSecurityConfigurer.class)
+        public IxorTalkHttpSecurityConfigurer defaultIxorTalkHttpSecurityConfigurer() {
+            return http -> http.authorizeRequests().anyRequest().authenticated();
         }
 
         @Bean
