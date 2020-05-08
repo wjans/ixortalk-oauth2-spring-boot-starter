@@ -69,6 +69,13 @@ public class Auth0Users {
                 roleNamesToAssign.stream().map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId()).collect(toList()));
     }
 
+    public String createEmailVerificationTicket(String email, String resultUrl, int timeToLiveInSeconds) {
+        return
+                ofNullable(auth0ManagementAPI.listUsersByEmail().get(email))
+                        .map(user -> auth0ManagementAPI.createEmailVerificationTicket(user.getId(), resultUrl, timeToLiveInSeconds))
+                        .orElseThrow(() -> new Auth0RuntimeException("User with email '" + email + "' not found"));
+    }
+
     public void unblockUser(String email) {
         ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.unblockUser(user.getId()));
     }
