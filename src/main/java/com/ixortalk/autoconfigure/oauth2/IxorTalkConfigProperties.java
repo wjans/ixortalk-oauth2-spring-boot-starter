@@ -127,8 +127,6 @@ public class IxorTalkConfigProperties {
         }
     }
 
-
-
     public static class ManagementApi {
 
         private String audience;

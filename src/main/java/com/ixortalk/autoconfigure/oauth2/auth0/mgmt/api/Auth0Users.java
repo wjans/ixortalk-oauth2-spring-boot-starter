@@ -77,6 +77,10 @@ public class Auth0Users {
         ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl));
     }
 
+    public void updateAppMetadata(String email, Map<String, Object> appMetadata) {
+        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.updateAppMetadata(user.getId(), appMetadata));
+    }
+
     private static UserInfo toUserInfo(User user) {
         return new UserInfo(
                 user.getEmail(),

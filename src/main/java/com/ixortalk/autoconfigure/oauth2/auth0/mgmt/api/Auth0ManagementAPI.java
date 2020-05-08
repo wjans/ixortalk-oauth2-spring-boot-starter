@@ -203,6 +203,12 @@ public class Auth0ManagementAPI {
         updateUser(userId, updated);
     }
 
+    public void updateAppMetadata(String userId, Map<String, Object> appMetadata) {
+        User updated = new User();
+        updated.setAppMetadata(appMetadata);
+        updateUser(userId, updated);
+    }
+
     private void updateUser(String userId, User update) {
         try {
             getManagementAPI()
