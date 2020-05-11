@@ -26,6 +26,7 @@ package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.exception.Auth0Exception;
 import com.auth0.json.mgmt.Role;
+import com.auth0.json.mgmt.tickets.EmailVerificationTicket;
 import com.auth0.json.mgmt.users.User;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.RolesFilterAdapter;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.UserFilterAdapter;
@@ -188,6 +189,22 @@ public class Auth0ManagementAPI {
         } catch (Auth0Exception e) {
             LOGGER.error("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
             throw new Auth0RuntimeException("Error creating blocked user '" + email + "' :" + e.getMessage(), e);
+        }
+    }
+
+    public String createEmailVerificationTicket(String userId, String resultUrl, int timeToLiveInSeconds) {
+        EmailVerificationTicket emailVerificationTicket = new EmailVerificationTicket(userId);
+        emailVerificationTicket.setResultUrl(resultUrl);
+        emailVerificationTicket.setTTLSeconds(timeToLiveInSeconds);
+        try {
+            return getManagementAPI()
+                    .tickets()
+                    .requestEmailVerification(emailVerificationTicket)
+                    .execute()
+                    .getTicket();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error creating email verification ticket for user '" + userId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error creating email verification ticket for user '" + userId + "' :" + e.getMessage(), e);
         }
     }
 
