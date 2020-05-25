@@ -27,6 +27,7 @@ import com.ixortalk.autoconfigure.oauth2.auth0.AudienceRequestEntityConverter;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0ManagementAPI;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0Roles;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.Auth0Users;
+import com.ixortalk.autoconfigure.oauth2.jwt.CustomClaimsProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -157,6 +158,12 @@ public class OAuth2AutoConfiguration {
                 http.requestMatcher(toAnyEndpoint())
                         .authorizeRequests((requests) -> requests.anyRequest().permitAll());
             }
+        }
+
+        @Bean
+        @ConditionalOnProperty("ixortalk.security.jwt.custom-claims-namespace")
+        public CustomClaimsProvider customClaimsProvider() {
+            return new CustomClaimsProvider();
         }
     }
 
