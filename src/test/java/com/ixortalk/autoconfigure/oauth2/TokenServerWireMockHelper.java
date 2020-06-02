@@ -23,30 +23,21 @@
  */
 package com.ixortalk.autoconfigure.oauth2;
 
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.ixortalk.autoconfigure.oauth2.OAuth2TestConfiguration.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.ixortalk.autoconfigure.oauth2.OAuth2TestConfiguration.INTERNAL_API_TEST_CLIENT_ID;
+import static com.ixortalk.autoconfigure.oauth2.OAuth2TestConfiguration.INTERNAL_API_TEST_CLIENT_SECRET;
+import static com.ixortalk.autoconfigure.oauth2.OAuth2TestConfiguration.RETRIEVED_ADMIN_TOKEN;
 import static org.springframework.security.oauth2.common.OAuth2AccessToken.BEARER_TYPE;
 
 public class TokenServerWireMockHelper {
 
-    public static void stubTokenForSpringContextLoading(WireMockClassRule wireMockClassRule) {
-        try {
-            wireMockClassRule.stubFor(post(urlEqualTo("/token"))
-                    .willReturn(okJson(
-                            new JSONObject()
-                                    .put("access_token", "someValueToGetSpringContextLoaded")
-                                    .put("token_type", BEARER_TYPE)
-                                    .toString())));
-        } catch (JSONException e) {
-            throw new RuntimeException("Error stubbing token endpoint: " + e.getMessage(), e);
-        }
-    }
-
-    public static void stubAdminToken(WireMockClassRule wireMockClassRule) {
+    public static void stubAdminToken(WireMockRule wireMockClassRule) {
         try {
             wireMockClassRule.stubFor(post(urlEqualTo("/token"))
                     .withBasicAuth(INTERNAL_API_TEST_CLIENT_ID, INTERNAL_API_TEST_CLIENT_SECRET)

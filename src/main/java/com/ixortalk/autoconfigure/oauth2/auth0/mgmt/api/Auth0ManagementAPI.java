@@ -59,16 +59,17 @@ public class Auth0ManagementAPI {
 
     private OAuth2AuthorizeRequest authorizeRequest;
 
+    private String domain;
+
     private String createUserConnection;
 
     private AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager;
 
     public Auth0ManagementAPI(String domain, String createUserConnection, AuthorizedClientServiceOAuth2AuthorizedClientManager authorizedClientServiceOAuth2AuthorizedClientManager, OAuth2AuthorizeRequest authorizeRequest) {
+        this.domain = domain;
         this.createUserConnection = createUserConnection;
         this.authorizedClientServiceOAuth2AuthorizedClientManager = authorizedClientServiceOAuth2AuthorizedClientManager;
         this.authorizeRequest = authorizeRequest;
-
-        this.managementAPI = new ManagementAPI(domain, getAccessToken());
     }
 
     @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
@@ -239,7 +240,11 @@ public class Auth0ManagementAPI {
     }
 
     private ManagementAPI getManagementAPI() {
-        managementAPI.setApiToken(getAccessToken());
+        if (this.managementAPI == null) {
+            this.managementAPI = new ManagementAPI(domain, getAccessToken());
+        } else {
+            managementAPI.setApiToken(getAccessToken());
+        }
         return managementAPI;
     }
 
