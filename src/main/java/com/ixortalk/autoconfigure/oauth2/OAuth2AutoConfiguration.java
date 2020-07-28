@@ -272,6 +272,14 @@ public class OAuth2AutoConfiguration {
                                 .expireAfterWrite(ixorTalkConfigProperties.getAuth0().getManagementApi().getUserRoleCache().getTimeToLiveInSeconds(), SECONDS)
                                 .build());
             }
+
+            @Bean
+            public Cache auth0RoleUserCache() {
+                return new CaffeineCache(AUTH_0_ROLE_USER_CACHE,
+                        newBuilder()
+                                .expireAfterWrite(ixorTalkConfigProperties.getAuth0().getManagementApi().getRoleUserCache().getTimeToLiveInSeconds(), SECONDS)
+                                .build());
+            }
         }
     }
 

@@ -24,6 +24,7 @@
 package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
 import com.auth0.json.mgmt.Role;
+import com.auth0.json.mgmt.users.User;
 
 import java.util.Set;
 
@@ -55,6 +56,14 @@ public class Auth0Roles {
                 .getUsersRoles(this.auth0ManagementAPI.listUsersByEmail().get(email).getId())
                 .stream()
                 .map(Role::getName)
+                .collect(toSet());
+    }
+
+    public Set<String> getUsersInRole(String roleName) {
+        return this.auth0ManagementAPI
+                .getUsersInRole(this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+                .stream()
+                .map(User::getEmail)
                 .collect(toSet());
     }
 
