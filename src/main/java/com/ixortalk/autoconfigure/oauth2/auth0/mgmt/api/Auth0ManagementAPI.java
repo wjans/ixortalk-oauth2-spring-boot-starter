@@ -50,6 +50,7 @@ public class Auth0ManagementAPI {
     public static final String AUTH_0_USER_CACHE = "auth0UserCache";
     public static final String AUTH_0_ROLE_CACHE = "auth0RoleCache";
     public static final String AUTH_0_USER_ROLE_CACHE = "auth0UserRoleCache";
+    public static final String AUTH_0_ROLE_USER_CACHE = "auth0RoleUserCache";
 
     public static final int PAGE_SIZE = 100;
 
@@ -113,6 +114,21 @@ public class Auth0ManagementAPI {
         }
     }
 
+    @Cacheable(cacheNames = AUTH_0_ROLE_USER_CACHE, sync = true)
+    public List<User> getUsersInRole(String roleId) {
+        try {
+            return
+                    getManagementAPI()
+                            .roles()
+                            .listUsers(roleId, null)
+                            .execute()
+                            .getItems();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error retrieving users in role '" + roleId + "' :" + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving users in role '" + roleId + "' :" + e.getMessage(), e);
+        }
+    }
+
     @CacheEvict(cacheNames = AUTH_0_ROLE_CACHE, allEntries = true)
     public void addRole(String roleName) {
         try {
@@ -129,7 +145,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = {AUTH_0_ROLE_CACHE, AUTH_0_USER_ROLE_CACHE}, allEntries = true)
+    @CacheEvict(cacheNames = {AUTH_0_ROLE_CACHE, AUTH_0_USER_ROLE_CACHE, AUTH_0_ROLE_USER_CACHE}, allEntries = true)
     public void deleteRole(String roleId) {
         try {
             getManagementAPI()
@@ -142,7 +158,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = AUTH_0_USER_ROLE_CACHE, key = "#userId")
+    @CacheEvict(cacheNames = {AUTH_0_USER_ROLE_CACHE, AUTH_0_ROLE_USER_CACHE}, allEntries = true)
     public void assignRolesToUser(String userId, List<String> roleIds) {
         try {
             getManagementAPI()
@@ -155,7 +171,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = AUTH_0_USER_ROLE_CACHE, key = "#userId")
+    @CacheEvict(cacheNames = {AUTH_0_USER_ROLE_CACHE, AUTH_0_ROLE_USER_CACHE}, allEntries = true)
     public void removeRolesFromUser(String userId, List<String> roleIds) {
         try {
             getManagementAPI()
@@ -168,7 +184,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = AUTH_0_USER_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = {AUTH_0_USER_CACHE, AUTH_0_ROLE_USER_CACHE}, allEntries = true)
     public void createBlockedUserWithRoles(String email, String password, String firstName, String lastName, String langKey, List<String> roleIds) {
         User user = new User();
         user.setEmail(email);
