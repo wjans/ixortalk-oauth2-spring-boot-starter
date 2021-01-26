@@ -40,28 +40,30 @@ public class Auth0Roles {
     }
 
     public Set<String> getAllRoleNames() {
-        return this.auth0ManagementAPI.listRolesByName().keySet();
+        return auth0ManagementAPI.listRolesByName().keySet();
     }
 
     public void addRole(String roleName) {
-        this.auth0ManagementAPI.addRole(roleName);
+        auth0ManagementAPI.addRole(roleName);
     }
 
     public void deleteRole(String roleName) {
-        this.auth0ManagementAPI.deleteRole(this.auth0ManagementAPI.listRolesByName().get(roleName).getId());
+        auth0ManagementAPI.deleteRole(auth0ManagementAPI.listRolesByName().get(roleName).getId());
     }
 
     public Set<String> getUsersRoles(String email) {
-        return this.auth0ManagementAPI
-                .getUsersRoles(this.auth0ManagementAPI.listUsersByEmail().get(email).getId())
-                .stream()
-                .map(Role::getName)
-                .collect(toSet());
+        return auth0ManagementAPI.getUserByEmail(email)
+                .map(User::getId)
+                .map(id -> auth0ManagementAPI.getUsersRoles(id)
+                        .stream()
+                        .map(Role::getName)
+                        .collect(toSet()))
+                .orElseThrow(() -> new Auth0RuntimeException("User with email '" + email + "' not found"));
     }
 
     public Set<String> getUsersInRole(String roleName) {
-        return this.auth0ManagementAPI
-                .getUsersInRole(this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+        return auth0ManagementAPI
+                .getUsersInRole(auth0ManagementAPI.listRolesByName().get(roleName).getId())
                 .stream()
                 .map(User::getEmail)
                 .collect(toSet());
@@ -72,11 +74,14 @@ public class Auth0Roles {
             return;
         }
 
-        this.auth0ManagementAPI
-                .assignRolesToUser(
-                        this.auth0ManagementAPI.listUsersByEmail().get(email).getId(),
-                        roleNamesToAssign.stream().map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId()).collect(toList())
-                );
+        auth0ManagementAPI.getUserByEmail(email)
+                .ifPresent(user -> this.auth0ManagementAPI.assignRolesToUser(
+                        user.getId(),
+                        roleNamesToAssign.stream()
+                                .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+                                .collect(toList())
+                ));
+
     }
 
     public void removeRolesFromUser(String email, Set<String> roleNamesToRemove) {
@@ -84,10 +89,12 @@ public class Auth0Roles {
             return;
         }
 
-        this.auth0ManagementAPI
-                .removeRolesFromUser(
-                        this.auth0ManagementAPI.listUsersByEmail().get(email).getId(),
-                        roleNamesToRemove.stream().map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId()).collect(toList())
-                );
+        auth0ManagementAPI.getUserByEmail(email)
+                .ifPresent(user -> auth0ManagementAPI.removeRolesFromUser(
+                                user.getId(),
+                                roleNamesToRemove.stream()
+                                        .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+                                        .collect(toList())
+                ));
     }
 }
