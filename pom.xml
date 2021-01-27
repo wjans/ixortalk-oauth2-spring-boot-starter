@@ -29,7 +29,7 @@
 
 	<groupId>com.ixortalk</groupId>
 	<artifactId>ixortalk-oauth2-spring-boot-starter</artifactId>
-	<version>1.0.11-SNAPSHOT</version>
+	<version>1.0.11</version>
 
 	<name>ixortalk-oauth2-spring-boot-starter/</name>
 	<description>IxorTalk OAuth2 Spring Boot Starter</description>
