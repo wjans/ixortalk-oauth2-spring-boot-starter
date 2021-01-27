@@ -58,7 +58,7 @@ public class Auth0Roles {
                         .stream()
                         .map(Role::getName)
                         .collect(toSet()))
-                .orElseThrow(() -> new Auth0RuntimeException("User with email '" + email + "' not found"));
+                .orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
     }
 
     public Set<String> getUsersInRole(String roleName) {
@@ -74,14 +74,12 @@ public class Auth0Roles {
             return;
         }
 
-        auth0ManagementAPI.getUserByEmail(email)
-                .ifPresent(user -> this.auth0ManagementAPI.assignRolesToUser(
-                        user.getId(),
-                        roleNamesToAssign.stream()
-                                .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
-                                .collect(toList())
-                ));
-
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.assignRolesToUser(
+                user.getId(),
+                roleNamesToAssign.stream()
+                        .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+                        .collect(toList()));
     }
 
     public void removeRolesFromUser(String email, Set<String> roleNamesToRemove) {
@@ -89,12 +87,11 @@ public class Auth0Roles {
             return;
         }
 
-        auth0ManagementAPI.getUserByEmail(email)
-                .ifPresent(user -> auth0ManagementAPI.removeRolesFromUser(
-                                user.getId(),
-                                roleNamesToRemove.stream()
-                                        .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
-                                        .collect(toList())
-                ));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.removeRolesFromUser(
+                user.getId(),
+                roleNamesToRemove.stream()
+                        .map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId())
+                        .collect(toList()));
     }
 }

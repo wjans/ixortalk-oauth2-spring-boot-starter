@@ -34,4 +34,12 @@ public class Auth0RuntimeException extends RuntimeException {
     public Auth0RuntimeException(String message, Auth0Exception cause) {
         super(message, cause);
     }
+
+    public static Auth0RuntimeException ofUserWithEmailNotFound(String email) {
+        return new Auth0RuntimeException(String.format("User with email '%s' not found", email));
+    }
+
+    public static Auth0RuntimeException ofUserWithIdNotFound(String id) {
+        return new Auth0RuntimeException(String.format("User with id '%s' not found", id));
+    }
 }

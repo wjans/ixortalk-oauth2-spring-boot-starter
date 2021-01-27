@@ -62,19 +62,22 @@ public class Auth0Users {
     public String createEmailVerificationTicket(String userId, String resultUrl, int timeToLiveInSeconds) {
         return auth0ManagementAPI.getUserById(userId)
                         .map(user -> auth0ManagementAPI.createEmailVerificationTicket(user.getId(), resultUrl, timeToLiveInSeconds))
-                        .orElseThrow(() -> new Auth0RuntimeException("User with id '" + userId + "' not found"));
+                        .orElseThrow(() -> Auth0RuntimeException.ofUserWithIdNotFound(userId));
     }
 
     public void unblockUser(String email) {
-        auth0ManagementAPI.getUserByEmail(email).ifPresent(user -> auth0ManagementAPI.unblockUser(user.getId()));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.unblockUser(user.getId());
     }
 
     public void updateProfilePicture(String email, String profilePictureUrl) {
-        auth0ManagementAPI.getUserByEmail(email).ifPresent(user -> auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl);
     }
 
     public void updateAppMetadata(String email, Map<String, Object> appMetadata) {
-        auth0ManagementAPI.getUserByEmail(email).ifPresent(user -> auth0ManagementAPI.updateAppMetadata(user.getId(), appMetadata));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.updateAppMetadata(user.getId(), appMetadata);
     }
 
     private static UserInfo toUserInfo(User user) {

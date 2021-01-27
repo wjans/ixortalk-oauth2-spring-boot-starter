@@ -30,7 +30,6 @@ import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.tickets.EmailVerificationTicket;
 import com.auth0.json.mgmt.users.User;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.RolesFilterAdapter;
-import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.UserFilterAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -50,7 +49,8 @@ import static java.util.stream.Collectors.toMap;
 
 public class Auth0ManagementAPI {
 
-    public static final String AUTH_0_USER_CACHE = "auth0UserCache";
+    public static final String AUTH_0_USER_BY_ID_CACHE = "auth0UserByIdCache";
+    public static final String AUTH_0_USER_BY_EMAIL_CACHE = "auth0UserByEmailCache";
     public static final String AUTH_0_ROLE_CACHE = "auth0RoleCache";
     public static final String AUTH_0_USER_ROLE_CACHE = "auth0UserRoleCache";
     public static final String AUTH_0_ROLE_USER_CACHE = "auth0RoleUserCache";
@@ -76,7 +76,7 @@ public class Auth0ManagementAPI {
         this.authorizeRequest = authorizeRequest;
     }
 
-    @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
+    @Cacheable(cacheNames = AUTH_0_USER_BY_ID_CACHE, sync = true)
     public Optional<User> getUserById(String userId) {
         try {
             return Optional.ofNullable(getManagementAPI().users().get(userId, new UserFilter())
@@ -87,7 +87,7 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
+    @Cacheable(cacheNames = AUTH_0_USER_BY_EMAIL_CACHE, sync = true)
     public Optional<User> getUserByEmail(String userEmail) {
         try {
             List<User> users = getManagementAPI().users().listByEmail(userEmail, new UserFilter())
@@ -205,7 +205,7 @@ public class Auth0ManagementAPI {
     }
 
     @Caching(evict = {
-            @CacheEvict(cacheNames = AUTH_0_USER_CACHE, key = "#email"),
+            @CacheEvict(cacheNames = AUTH_0_USER_BY_EMAIL_CACHE, key = "#email"),
             @CacheEvict(cacheNames = AUTH_0_ROLE_USER_CACHE, allEntries = true)
     })
     public void createBlockedUserWithRoles(String email, String password, String firstName, String lastName, String langKey, List<String> roleIds) {
