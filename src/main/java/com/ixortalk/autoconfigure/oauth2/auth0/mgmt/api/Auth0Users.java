@@ -41,22 +41,12 @@ public class Auth0Users {
         this.auth0ManagementAPI = auth0ManagementAPI;
     }
 
-    public Map<String, UserInfo> listUsersByEmail() {
-        return this.auth0ManagementAPI
-                .listUsersByEmail()
-                .entrySet()
-                .stream()
-                .collect(toMap(
-                        Map.Entry::getKey,
-                        user -> toUserInfo(user.getValue())));
-    }
-
     public Optional<UserInfo> getUserInfo(String email) {
-        return ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).map(Auth0Users::toUserInfo);
+        return auth0ManagementAPI.getUserByEmail(email).map(Auth0Users::toUserInfo);
     }
 
     public boolean userExists(String email) {
-        return auth0ManagementAPI.listUsersByEmail().containsKey(email);
+        return auth0ManagementAPI.getUserByEmail(email).isPresent();
     }
 
     public void createBlockedUser(String email, String password, String firstName, String lastName, String langKey, List<String> roleNamesToAssign) {
@@ -69,23 +59,25 @@ public class Auth0Users {
                 roleNamesToAssign.stream().map(roleName -> this.auth0ManagementAPI.listRolesByName().get(roleName).getId()).collect(toList()));
     }
 
-    public String createEmailVerificationTicket(String email, String resultUrl, int timeToLiveInSeconds) {
-        return
-                ofNullable(auth0ManagementAPI.listUsersByEmail().get(email))
+    public String createEmailVerificationTicket(String userId, String resultUrl, int timeToLiveInSeconds) {
+        return auth0ManagementAPI.getUserById(userId)
                         .map(user -> auth0ManagementAPI.createEmailVerificationTicket(user.getId(), resultUrl, timeToLiveInSeconds))
-                        .orElseThrow(() -> new Auth0RuntimeException("User with email '" + email + "' not found"));
+                        .orElseThrow(() -> Auth0RuntimeException.ofUserWithIdNotFound(userId));
     }
 
     public void unblockUser(String email) {
-        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.unblockUser(user.getId()));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.unblockUser(user.getId());
     }
 
     public void updateProfilePicture(String email, String profilePictureUrl) {
-        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.updateProfilePicture(user.getId(), profilePictureUrl);
     }
 
     public void updateAppMetadata(String email, Map<String, Object> appMetadata) {
-        ofNullable(auth0ManagementAPI.listUsersByEmail().get(email)).ifPresent(user -> auth0ManagementAPI.updateAppMetadata(user.getId(), appMetadata));
+        User user = auth0ManagementAPI.getUserByEmail(email).orElseThrow(() -> Auth0RuntimeException.ofUserWithEmailNotFound(email));
+        auth0ManagementAPI.updateAppMetadata(user.getId(), appMetadata);
     }
 
     private static UserInfo toUserInfo(User user) {
