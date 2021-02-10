@@ -24,21 +24,23 @@
 package com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api;
 
 import com.auth0.client.mgmt.ManagementAPI;
+import com.auth0.client.mgmt.filter.UserFilter;
 import com.auth0.exception.Auth0Exception;
 import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.tickets.EmailVerificationTicket;
 import com.auth0.json.mgmt.users.User;
 import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.RolesFilterAdapter;
-import com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.UserFilterAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.ixortalk.autoconfigure.oauth2.auth0.mgmt.api.util.PageUtil.listItemsFromAllPages;
 import static java.util.Collections.singletonMap;
@@ -47,7 +49,8 @@ import static java.util.stream.Collectors.toMap;
 
 public class Auth0ManagementAPI {
 
-    public static final String AUTH_0_USER_CACHE = "auth0UserCache";
+    public static final String AUTH_0_USER_BY_ID_CACHE = "auth0UserByIdCache";
+    public static final String AUTH_0_USER_BY_EMAIL_CACHE = "auth0UserByEmailCache";
     public static final String AUTH_0_ROLE_CACHE = "auth0RoleCache";
     public static final String AUTH_0_USER_ROLE_CACHE = "auth0UserRoleCache";
     public static final String AUTH_0_ROLE_USER_CACHE = "auth0RoleUserCache";
@@ -73,16 +76,33 @@ public class Auth0ManagementAPI {
         this.authorizeRequest = authorizeRequest;
     }
 
-    @Cacheable(cacheNames = AUTH_0_USER_CACHE, sync = true)
-    public Map<String, User> listUsersByEmail() {
+    @Cacheable(cacheNames = AUTH_0_USER_BY_ID_CACHE, sync = true)
+    public Optional<User> getUserById(String userId) {
         try {
-            return
-                    listItemsFromAllPages(getManagementAPI().users()::list, new UserFilterAdapter())
-                            .stream()
-                            .collect(toMap(User::getEmail, identity()));
+            return Optional.ofNullable(getManagementAPI().users().get(userId, new UserFilter())
+                    .execute());
         } catch (Auth0Exception e) {
-            LOGGER.error("Error retrieving users: " + e.getMessage(), e);
-            throw new Auth0RuntimeException("Error retrieving users: " + e.getMessage(), e);
+            LOGGER.error("Error retrieving user: " + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving user: " + e.getMessage(), e);
+        }
+    }
+
+    @Cacheable(cacheNames = AUTH_0_USER_BY_EMAIL_CACHE, sync = true)
+    public Optional<User> getUserByEmail(String userEmail) {
+        try {
+            List<User> users = getManagementAPI().users().listByEmail(userEmail, new UserFilter())
+                    .execute();
+
+            if (users.size() > 1) {
+                String notUniqueErrorMessage = String.format("Trying to fetch unique user by email '%s' which is found %d times", userEmail, users.size());
+                LOGGER.error(notUniqueErrorMessage);
+                throw new IllegalStateException(notUniqueErrorMessage);
+            }
+
+            return users.stream().findFirst();
+        } catch (Auth0Exception e) {
+            LOGGER.error("Error retrieving user: " + e.getMessage(), e);
+            throw new Auth0RuntimeException("Error retrieving user: " + e.getMessage(), e);
         }
     }
 
@@ -184,7 +204,10 @@ public class Auth0ManagementAPI {
         }
     }
 
-    @CacheEvict(cacheNames = {AUTH_0_USER_CACHE, AUTH_0_ROLE_USER_CACHE}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = AUTH_0_USER_BY_EMAIL_CACHE, key = "#email"),
+            @CacheEvict(cacheNames = AUTH_0_ROLE_USER_CACHE, allEntries = true)
+    })
     public void createBlockedUserWithRoles(String email, String password, String firstName, String lastName, String langKey, List<String> roleIds) {
         User user = new User();
         user.setEmail(email);

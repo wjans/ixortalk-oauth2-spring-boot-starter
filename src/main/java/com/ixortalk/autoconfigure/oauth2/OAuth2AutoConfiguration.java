@@ -250,12 +250,21 @@ public class OAuth2AutoConfiguration {
             }
 
             @Bean
-            public Cache auth0UserCache() {
-                return new CaffeineCache(AUTH_0_USER_CACHE,
+            public Cache auth0UserByIdCache() {
+                return new CaffeineCache(AUTH_0_USER_BY_ID_CACHE,
                         newBuilder()
                                 .expireAfterWrite(ixorTalkConfigProperties.getAuth0().getManagementApi().getUserCache().getTimeToLiveInSeconds(), SECONDS)
                                 .build());
             }
+
+            @Bean
+            public Cache auth0UserByEmailCache() {
+                return new CaffeineCache(AUTH_0_USER_BY_EMAIL_CACHE,
+                        newBuilder()
+                                .expireAfterWrite(ixorTalkConfigProperties.getAuth0().getManagementApi().getUserCache().getTimeToLiveInSeconds(), SECONDS)
+                                .build());
+            }
+
 
             @Bean
             public Cache auth0RoleCache() {
